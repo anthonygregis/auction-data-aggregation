@@ -1,4 +1,6 @@
 require('dotenv').config()
+const express = require('express')
+const app = express()
 const db = require('./models')
 const axios = require('axios')
 var exec = require('exec')
@@ -168,6 +170,11 @@ const auctionMethod = () => {
 }
 
 //Start Express
+app.get('/', (req, res) => {
+    res.send("You thought")
+})
+
+app.listen(3000)
 auctionMethod()
 // itemInfo()
 
