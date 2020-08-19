@@ -180,6 +180,6 @@ const auctionMethod = () => {
     })
 }
 
-// auctionMethod()
+auctionMethod()
 
 module.exports = server;
