@@ -7,6 +7,17 @@ var exec = require('exec')
 const BNET_ID = process.env.BNET_ID
 const BNET_SECRET = process.env.BNET_SECRET
 
+//Start Express
+app.get('/', (req, res) => {
+    res.send("You thought")
+})
+
+const port = process.env.PORT || 3000;
+
+const server = app.listen(port, () => {
+  console.log(`🎧 You're listening to the smooth sounds of port ${port} 🎧`)
+});
+
 const getToken = (cb) => {
     exec(`curl -u ${BNET_ID}:${BNET_SECRET} -d grant_type=client_credentials https://us.battle.net/oauth/token`
         , (error, result, metadata) => {
@@ -169,28 +180,6 @@ const auctionMethod = () => {
     })
 }
 
-//Start Express
-app.get('/', (req, res) => {
-    res.send("You thought")
-})
+// auctionMethod()
 
-app.listen(3000)
-auctionMethod()
-// itemInfo()
-
-//STUPID STUFF
-//Create a readable stream
-// var readerStream =
-//
-//     // Handle stream events --> data, end, and error
-//     readerStream.on('data', function(chunk) {
-//         console.log("Chunk:", chunk)
-//     });
-//
-// readerStream.on('end',function() {
-//     console.log("Done")
-// });
-//
-// readerStream.on('error', function(err) {
-//     console.log("stuff broke");
-// });
+module.exports = server;
