@@ -2,7 +2,6 @@
 
 var fs        = require('fs');
 var path      = require('path');
-require('pg').defaults.parseInt8 = true
 var Sequelize = require('sequelize');
 var basename  = path.basename(module.filename);
 var env       = process.env.NODE_ENV || 'development';
