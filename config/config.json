@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "wowAdmin",
+    "password": "cs09&6nP",
+    "database": "wowmarket",
+    "host": "149.28.58.181",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "wowAdmin",
+    "password": "cs09&6nP",
+    "database": "wowmarket",
+    "host": "149.28.58.181",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "wowAdmin",
+    "password": "cs09&6nP",
+    "database": "wowmarket",
+    "host": "149.28.58.181",
+    "dialect": "mysql"
+  }
+}

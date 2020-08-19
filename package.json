@@ -1,0 +1,39 @@
+{
+  "name": "authapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "NODE_ENV=test node_modules/mocha/bin/mocha"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "supertest": "^4.0.2"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "connect-flash": "^0.1.1",
+    "connect-mongodb-session": "^2.4.0",
+    "connect-session-sequelize": "^7.0.1",
+    "csv-parse": "^4.12.0",
+    "dotenv": "^8.0.0",
+    "ejs": "^2.6.2",
+    "exec": "^0.2.1",
+    "express": "^4.17.1",
+    "express-ejs-layouts": "^2.5.0",
+    "express-session": "^1.17.1",
+    "fs": "0.0.1-security",
+    "morgan": "^1.9.1",
+    "mysql2": "^2.1.0",
+    "passport": "^0.4.1",
+    "passport-bnet": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "pg": "^7.11.0",
+    "request": "^2.88.2",
+    "sequelize": "^5.8.12",
+    "stream-array": "^1.1.2",
+    "stream-json": "^1.7.1"
+  }
+}
