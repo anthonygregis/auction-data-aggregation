@@ -1,107 +1,30 @@
-# Express Authentication
+# WoW Auction House Data Aggregation
 
-Express authentication template using Passport + flash messages + custom middleware
+This component of my project is designed to connect to my site's database, and parse/store all the auction house transactions on WoW. It uses the connectedRealm table to grab all currently logged connected realm's and get auction house on each refresh (1 hour). I query the api endpoint that returns roughly 141k listings, depending on current auction house traffic. I scrap it for the item id, buyout price, quantity listed and save that as a row in my pricingData table. That table is used to the store the hourly data of the auction houses for the last 14 days.
 
 ## What it includes
 
-* Sequelize user model / migration
-* Settings for PostgreSQL
-* Passport and passport-local for authentication
-* Sessions to keep user logged in between pages
-* Flash messages for errors and successes
-* Passwords that are hashed with BCrypt
-* EJS Templating and EJS Layouts
+* Sequelize
+* Axios
+* Async Iterators (Keeping track of sequelize transactions)
+* Time Tracking (Goes off every hour on the hour)
 
-### User Model
+### pricingData Model
 
-| Column Name | Data Type | Notes |
+| Column Name     | Data Type     | Notes                          |
 | --------------- | ------------- | ------------------------------ |
-| id | Integer | Serial Primary Key, Auto-generated |
-| name | String | Must be provided |
-| email | String | Must be unique / used for login |
-| password | String | Stored as a hash |
-| createdAt | Date | Auto-generated |
-| updatedAt | Date | Auto-generated |
+| id              | Integer (PK)  | Generic ID                     |
+| unitPrice       | BIGINT        | Buyout price of listing        |
+| Quantity        | Integer       | Amount of an item listed       |
+| connectedRealm  | Integer (FK)  | Server hosting realms / auction|
+| itemId          | Integer (FK)  | Item used in the listing       |
+| createdAt       | Date          | Auto-generated                 |
+| updatedAt       | Date          | Auto-generated                 |
 
-### Default Routes
+### Coding Steps
 
-| Method | Path | Location | Purpose |
-| ------ | ---------------- | -------------- | ------------------- |
-| GET | / | server.js | Home page |
-| GET | /auth/login | auth.js | Login form |
-| GET | /auth/signup | auth.js | Signup form |
-| POST | /auth/login | auth.js | Login user |
-| POST | /auth/signup | auth.js | Creates User |
-| GET | /auth/logout | auth.js | Removes session info |
-| GET | /profile | server.js | Regular User Profile |
-
-## Steps To Use
-
-#### 1. Create a new repo on Github and use your 'express-authentication' as the template
-
-When we are finished with this boilerplate, we are going to make it a template on Github that will allow us to create a new repo on Github with all this code already loaded in.
-* Go to `github.com` and create a new repository. In the template dropdown, choose this template.
-* Clone your new repo to your local machine
-* Get Codin'!
-
-#### 2. Delete any .keep files
-
-The `.keep` files are there to maintain the file structure of the auth. If there is a folder that has nothing in it, git won't add it. The dev work around is to add a file to it that has nothing in it, just forces git to keep the folder so we can use it later.
-
-#### 3. Install node modules from the package.json
-
-```
-npm install
-```
-
-(Or just `npm i` for short)
-
-#### 4. Customize with new project name
-
-Remove defaulty type stuff. Some areas to consider are:
-
-* Title in `layout.ejs`
-* Description/Repo Link in `package.json`
-* Remove boilerplate's README content and replace with new project's readme
-
-#### 5. Create a new database for the new project
-
-Using the sequelize command line interface, you can create a new database from the terminal.
-
-```
-createdb <new_db_name>
-```
-
-#### 6. Update `config.json`
-
-* Change the database name
-* Other settings are likely okay, but check username, password, and dialect
-
-#### 7. Check the models and migrations for relevance to your project's needs
-
-For example, if your project requires a birthdate field, then don't add that in there. 
-
-> When changing your models, update both the model and the migration.
-
-#### 8. Run the migrations
-
-```
-sequelize db:migrate
-```
-
-#### 9. Add a `.env` file with the following fields:
-
-* SESSION_SECRET: Can be any random string; usually a hash in production
-* PORT: Usually 3000 or 8000
-
-#### 10. Run server; make sure it works
-
-```
-nodemon
-```
-
-or
-
-```
-node index.js
-```
+1. Connect to database through sequelize
+2. Grab all connectedRealms and their auction house endpoint
+3. .forEach through all connectedRealms
+4. Axios.get request the auction house data and return as a result
+5. Use an async / await iterator to parse through all rows of data and commit to database
