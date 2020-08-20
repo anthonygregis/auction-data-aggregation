@@ -182,6 +182,16 @@ const auctionMethod = () => {
     })
 }
 
-auctionMethod()
+var nextDate = new Date();
+if (nextDate.getMinutes() === 0) { // You can check for seconds here too
+    auctionMethod()
+} else {
+    nextDate.setHours(nextDate.getHours() + 1);
+    nextDate.setMinutes(0);
+    nextDate.setSeconds(0);// I wouldn't do milliseconds too ;)
+
+    var difference = nextDate - new Date();
+    setTimeout(auctionMethod, difference);
+}
 
 module.exports = server;
