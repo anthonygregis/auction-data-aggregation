@@ -1,22 +1,9 @@
 require('dotenv').config()
-const express = require('express')
-const app = express()
 const db = require('./models')
 const axios = require('axios')
 var exec = require('exec')
 const BNET_ID = process.env.BNET_ID
 const BNET_SECRET = process.env.BNET_SECRET
-
-//Start Express
-app.get('/', (req, res) => {
-    res.send("You thought")
-})
-
-const port = process.env.PORT || 3000;
-
-const server = app.listen(port, () => {
-  console.log(`🎧 You're listening to the smooth sounds of port ${port} 🎧`)
-});
 
 const getToken = (cb) => {
     exec(`curl -u ${BNET_ID}:${BNET_SECRET} -d grant_type=client_credentials https://us.battle.net/oauth/token`
@@ -103,95 +90,179 @@ const itemInfo = () => {
 
 const auctionMethod = () => {
     console.log("Running auction house grabbing")
-    getToken(access_token => {
-        db.connectedRealm.findAll()
-            .then(connRealm => {
-                connRealm.forEach(aConRealm => {
-                    let auctionHouse = aConRealm.auctionHouse
-                    axios.get(`${auctionHouse}&access_token=${access_token}`)
-                        .then((results) => {
-                            status = results.status
-                            statusMessage = results.statusText
-                            if(status === 200) {
-                                const asyncIterable = {
-                                    [Symbol.asyncIterator]() {
-                                        return {
-                                            i: 0,
-                                            next() {
-                                                if (this.i < results.data.auctions.length) {
-                                                    return Promise.resolve({ value: this.i++, done: false });
-                                                }
+    getToken(async access_token => {
+        const connectedRealms = await db.connectedRealm.findAll()
 
-                                                return Promise.resolve({ done: true });
-                                            }
-                                        };
+        let conRealmIterable = {
+            [Symbol.asyncIterator]() {
+                return {
+                    i: 0,
+                    next() {
+                        if (this.i < connectedRealms.length) {
+                            return Promise.resolve({ value: this.i++, done: false });
+                        }
+        
+                        return Promise.resolve({ done: true });
+                    }
+                };
+            }
+        };
+        
+        await (async function() {
+            for await (let num of conRealmIterable) {
+        
+                try {
+                    
+                    let auctionHouse = connectedRealms[num].auctionHouse
+                    let results = await axios.get(`${auctionHouse}&access_token=${access_token}`)
+                    let status = results.status
+                    let statusMessage = results.statusText
+                    let averageOfItems = {}
+
+                    if(status === 200) {
+                        let asyncIterable = {
+                            [Symbol.asyncIterator]() {
+                                return {
+                                    i: 0,
+                                    next() {
+                                        if (this.i < results.data.auctions.length) {
+                                            return Promise.resolve({ value: this.i++, done: false });
+                                        }
+                        
+                                        return Promise.resolve({ done: true });
                                     }
                                 };
-
-                                (async function() {
-                                    for await (let num of asyncIterable) {
-                                        try {
-
-                                            const result = await db.sequelize.transaction(async (t) => {
-
-                                                const item = await db.item.findOrCreate({
-                                                    where: {
-                                                        id: results.data.auctions[num].item.id
-                                                    },
-                                                    transaction: t
-                                                })
-
-                                                const pricingData = await db.pricingData.create({
-                                                    unitPrice: results.data.auctions[num].unit_price || results.data.auctions[num].buyout,
-                                                    quantity: results.data.auctions[num].quantity,
-                                                    itemId: results.data.auctions[num].item.id,
-                                                }, { transaction: t })
-
-                                                pricingData.setConnectedRealm(aConRealm.get().id)
-
-                                                return true
-
-                                            });
-
-                                            // If the execution reaches this line, the transaction has been committed successfully
-                                            // `result` is whatever was returned from the transaction callback (the `user`, in this case)
-
-                                        } catch (error) {
-                                            console.log("ERROR:", error)
-                                            // If the execution reaches this line, an error occurred.
-                                            // The transaction has already been rolled back automatically by Sequelize!
-
-                                        }
-                                    }
-                                })()
-                                console.log(results.data.auctions.length)
-                            } else {
-                                console.log("Auction House Fetch Failed:", statusMessage)
                             }
-                            // setInterval(testAuctionMethod, 1 * 60 * 60 * 1000)
-                        })
-                        .catch(err => {
-                            console.log("ERROR:", err)
-                        })
-                })
-                
-            })
-            .catch(err => {
-                console.log(err)
-            })
+                        };
+                        
+                        await (async function() {
+                            for await (let numResult of asyncIterable) {
+                                
+                                if (results.data.auctions[numResult] == null) { return }
+                        
+                                try {
+                                    // Filter data down to averages of each item
+                        
+                                    let itemId = results.data.auctions[numResult].item.id
+                                    let unitListingPrice = (results.data.auctions[numResult].buyout || results.data.auctions[numResult].unit_price) / results.data.auctions[numResult].quantity
+                                    let listingQuantity = results.data.auctions[numResult].quantity
+                        
+                        
+                                    if(averageOfItems[itemId]) {
+                                        averageOfItems[itemId].listingCount += 1
+                                        averageOfItems[itemId].unitListingPrice += unitListingPrice
+                                        averageOfItems[itemId].quantity += listingQuantity
+                                    } else {
+                                        averageOfItems[itemId] = {}
+                                        averageOfItems[itemId].listingCount = 1
+                                        averageOfItems[itemId].unitListingPrice = unitListingPrice
+                                        averageOfItems[itemId].quantity = listingQuantity
+                                    }
+                        
+                                    // If the execution reaches this line, the transaction has been committed successfully
+                                    // `result` is whatever was returned from the transaction callback (the `user`, in this case)
+                        
+                                } catch (error) {
+                                    console.log("ERROR:", error)
+                                    // If the execution reaches this line, an error occurred.
+                                    // The transaction has already been rolled back automatically by Sequelize!
+                        
+                                }
+                            }
+                            return true
+                        })()
+                        
+                        const seqIterable = {
+                            [Symbol.asyncIterator]() {
+                                return {
+                                    i: 0,
+                                    next() {
+                                        if (this.i < Object.keys(averageOfItems).length) {
+                                            return Promise.resolve({ value: this.i++, done: false });
+                                        }
+                        
+                                        return Promise.resolve({ done: true });
+                                    }
+                                };
+                            }
+                        };
+                        
+                        await (async function() {
+                            for await (let numSeq of seqIterable) {
+                        
+                                try {
+                                    // Filter data down to averages of each item
+                        
+                                    let itemId = Object.keys(averageOfItems)[numSeq]
+                        
+                                    let averageOfItem = averageOfItems[itemId].unitListingPrice / averageOfItems[itemId].listingCount
+                                    let quantityOfItem = averageOfItems[itemId].quantity
+                        
+                                    const result = await db.sequelize.transaction(async (t) => {
+                        
+                                        const item = await db.item.findOrCreate({
+                                            where: {
+                                                id: parseInt(itemId)
+                                            },
+                                            transaction: t
+                                        })
+                        
+                                        const pricingData = await db.pricingData.create({
+                                            unitPrice: averageOfItem,
+                                            quantity: quantityOfItem,
+                                            itemId: parseInt(itemId),
+                                        }, { transaction: t })
+                        
+                                        pricingData.setConnectedRealm(connectedRealms[num].get().id)
+                        
+                                        return true
+                        
+                                    });
+                        
+                                    // If the execution reaches this line, the transaction has been committed successfully
+                                    // `result` is whatever was returned from the transaction callback (the `user`, in this case)
+                        
+                                } catch (error) {
+                                    console.log("ERROR:", error)
+                                    // If the execution reaches this line, an error occurred.
+                                    // The transaction has already been rolled back automatically by Sequelize!
+                        
+                                }
+                            }
+                            return true
+                        })()
+                    } else {
+                        console.log("Auction House Fetch Failed:", statusMessage)
+                    }
+        
+                    // If the execution reaches this line, the transaction has been committed successfully
+                    // `result` is whatever was returned from the transaction callback (the `user`, in this case)
+        
+                } catch (error) {
+                    console.log("ERROR:", error)
+                    // If the execution reaches this line, an error occurred.
+                    // The transaction has already been rolled back automatically by Sequelize!
+        
+                }
+            }
+            return true
+        })()
+        
     })
 }
 
-var nextDate = new Date();
-if (nextDate.getMinutes() === 0) { // You can check for seconds here too
-    auctionMethod()
-} else {
-    nextDate.setHours(nextDate.getHours() + 1);
-    nextDate.setMinutes(0);
-    nextDate.setSeconds(0);// I wouldn't do milliseconds too ;)
+console.log("Done")
 
-    var difference = nextDate - new Date();
-    setTimeout(auctionMethod, difference);
-}
+auctionMethod()
 
-module.exports = server;
+// var nextDate = new Date();
+// if (nextDate.getMinutes() === 0) { // You can check for seconds here too
+//     auctionMethod()
+// } else {
+//     nextDate.setHours(nextDate.getHours() + 1);
+//     nextDate.setMinutes(0);
+//     nextDate.setSeconds(0);// I wouldn't do milliseconds too ;)
+
+//     var difference = nextDate - new Date();
+//     setTimeout(auctionMethod, difference);
+// }
