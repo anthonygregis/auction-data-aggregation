@@ -245,6 +245,7 @@ const auctionMethod = () => {
         
                 }
             }
+            console.log("Done with all realms")
             return true
         })()
         
